@@ -4,7 +4,7 @@ import { answerTelegramCallback, sendTelegramReport } from '@/lib/telegram';
 import { learningPreview, redactTelegramLearningText } from '@/lib/telegram-learning-text';
 import { secretsEqual } from '@/lib/worker-auth';
 import { env } from 'cloudflare:workers';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, ne } from 'drizzle-orm';
 
 type TelegramUpdate = {
   message?: {
@@ -49,8 +49,14 @@ export async function POST(request: Request) {
       return Response.json({ ok: true });
     }
     const linkedAt = new Date();
+    // 既存の紐付けを外す対象から、今回リンクする本人を除外する。
+    // 本人を含めると、同じチャットを本人が再リンクした場合に
+    // telegram_mfa_enabled が false のまま残り、2段階認証が無言で解除される。
     await db.batch([
-      db.update(users).set({ telegramChatId: null, telegramMfaEnabled: false, updatedAt: linkedAt }).where(eq(users.telegramChatId, String(chatId))),
+      db
+        .update(users)
+        .set({ telegramChatId: null, telegramMfaEnabled: false, updatedAt: linkedAt })
+        .where(and(eq(users.telegramChatId, String(chatId)), ne(users.id, tokenRows[0].userId))),
       db.update(users).set({ telegramChatId: String(chatId), updatedAt: linkedAt }).where(eq(users.id, tokenRows[0].userId)),
     ]);
     await db.delete(telegramLinkTokens).where(eq(telegramLinkTokens.tokenHash, tokenHash));

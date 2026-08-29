@@ -82,3 +82,21 @@ test('Telegram 連携解除経路は MFA 有効時に 409 で拒否する', asyn
   const source = await readFile(path.resolve('app/api/actions/route.ts'), 'utf8');
   assert.match(source, /disable_mfa_first/);
 });
+
+// Codexレビュー指摘（PR #1 / P1）の回帰防止。
+// 同じチャットを本人が再リンクした場合、解除対象に本人が含まれると
+// telegram_mfa_enabled が false のまま残る。
+
+test('紐付け解除の対象から本人を除外する', async () => {
+  const source = await readFile(path.resolve('app/api/telegram/webhook/route.ts'), 'utf8');
+  const clearing = source.split('\n').slice(
+    source.split('\n').findIndex((value) => value.includes('telegramMfaEnabled: false')),
+  ).slice(0, 3).join('\n');
+  assert.match(clearing, /ne\(users\.id, tokenRows\[0\]\.userId\)/);
+  assert.match(clearing, /and\(eq\(users\.telegramChatId, String\(chatId\)\)/);
+});
+
+test('drizzle-orm の ne を取り込んでいる', async () => {
+  const source = await readFile(path.resolve('app/api/telegram/webhook/route.ts'), 'utf8');
+  assert.match(source, /import \{[^}]*\bne\b[^}]*\} from 'drizzle-orm';/);
+});
