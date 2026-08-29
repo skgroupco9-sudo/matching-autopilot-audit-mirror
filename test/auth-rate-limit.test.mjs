@@ -72,3 +72,30 @@ test('レート制限キーは生の IP やメールを保存しない', async (
   assert.match(source, /crypto\.subtle\.sign\('HMAC'/);
   assert.doesNotMatch(source, /keyHash:\s*subject/);
 });
+
+// PQA-004 回帰防止。
+// ログインのレート制限キーが login:{ip}:{email} のみだと、単一の発信元から
+// 多数のメールアドレスへ試行する場合に上限が働かない。
+
+test('ログインは発信元単位の失敗回数も数える', async () => {
+  const source = await readFile(path.resolve('app/api/auth/login/route.ts'), 'utf8');
+  assert.match(source, /authRateLimitKey\('login_ip'/);
+  assert.match(source, /isAuthRateLimited\(ipKeyHash, now\)/);
+  assert.match(source, /recordAuthRateLimitFailure\(ipKeyHash, LOGIN_IP_POLICY, now\)/);
+  // 発信元単位の遮断はパスワード検証より前に判定する。
+  assert.ok(source.indexOf('isAuthRateLimited') < source.indexOf('verifyPassword(password'));
+});
+
+test('ログイン成功は発信元単位の記録を消さない', async () => {
+  const source = await readFile(path.resolve('app/api/auth/login/route.ts'), 'utf8');
+  const deleteLine = source.split('\n').find((value) => value.includes('db.delete(authRateLimits)'));
+  assert.ok(deleteLine, '成功時の記録削除行が見つからない');
+  assert.doesNotMatch(deleteLine, /ipKeyHash/);
+});
+
+test('発信元単位の上限はメール単位より緩く、同じ窓幅である', async () => {
+  const { LOGIN_IP_POLICY, LOGIN_IP_MAX_FAILURES } = await import('../lib/auth-rate-limit-policy.ts');
+  assert.equal(LOGIN_IP_MAX_FAILURES, 20);
+  assert.ok(LOGIN_IP_POLICY.maxRequests > 5);
+  assert.equal(LOGIN_IP_POLICY.windowMs, 15 * 60_000);
+});

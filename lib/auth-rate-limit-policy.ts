@@ -6,6 +6,10 @@ export const RECOVERY_ACCOUNT_WINDOW_MS = 60 * 60_000;
 export const RECOVERY_ACCOUNT_MAX_REQUESTS = 5;
 export const RECOVERY_ACCOUNT_BLOCK_MS = 60 * 60_000;
 
+export const LOGIN_IP_WINDOW_MS = 15 * 60_000;
+export const LOGIN_IP_MAX_FAILURES = 20;
+export const LOGIN_IP_BLOCK_MS = 15 * 60_000;
+
 export type AuthRateLimitPolicy = {
   maxRequests: number;
   windowMs: number;
@@ -34,6 +38,12 @@ export const RECOVERY_ACCOUNT_POLICY: AuthRateLimitPolicy = {
   maxRequests: RECOVERY_ACCOUNT_MAX_REQUESTS,
   windowMs: RECOVERY_ACCOUNT_WINDOW_MS,
   blockMs: RECOVERY_ACCOUNT_BLOCK_MS,
+};
+
+export const LOGIN_IP_POLICY: AuthRateLimitPolicy = {
+  maxRequests: LOGIN_IP_MAX_FAILURES,
+  windowMs: LOGIN_IP_WINDOW_MS,
+  blockMs: LOGIN_IP_BLOCK_MS,
 };
 
 // 現在の記録と時刻から、次に保存すべき記録と遮断判定を決める純関数。

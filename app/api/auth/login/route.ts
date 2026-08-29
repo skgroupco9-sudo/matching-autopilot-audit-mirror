@@ -15,6 +15,7 @@ import { env } from 'cloudflare:workers';
 import { eq } from 'drizzle-orm';
 import { validateJsonMutation } from '@/lib/request-security';
 import { createTelegramAuthChallenge } from '@/lib/auth-challenges';
+import { authRateLimitKey, clientIpOf, isAuthRateLimited, LOGIN_IP_POLICY, recordAuthRateLimitFailure } from '@/lib/auth-rate-limit';
 
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILURES = 5;
@@ -41,6 +42,13 @@ export async function POST(request: Request) {
   const db = getDb();
   const now = new Date();
   const keyHash = await clientKey(request, email);
+  // メール単位のキーだけでは、単一の発信元から多数のメールアドレスへ試行する場合に
+  // 上限が働かない。発信元単位の失敗回数も併せて数える。
+  const ipKeyHash = await authRateLimitKey('login_ip', clientIpOf(request));
+  const ipGate = await isAuthRateLimited(ipKeyHash, now);
+  if (ipGate.blocked) {
+    return Response.json({ error: 'too_many_attempts' }, { status: 429, headers: { 'retry-after': String(ipGate.retryAfterSeconds) } });
+  }
   const attempts = await db.select().from(authRateLimits).where(eq(authRateLimits.keyHash, keyHash)).limit(1);
   if (attempts[0]?.blockedUntil && attempts[0].blockedUntil > now) {
     return Response.json({ error: 'too_many_attempts' }, { status: 429, headers: { 'retry-after': String(Math.ceil((attempts[0].blockedUntil.getTime() - now.getTime()) / 1000)) } });
@@ -74,6 +82,10 @@ export async function POST(request: Request) {
       target: authRateLimits.keyHash,
       set: { failures, windowStartedAt, blockedUntil, updatedAt: now },
     });
+    const ipFailure = await recordAuthRateLimitFailure(ipKeyHash, LOGIN_IP_POLICY, now);
+    if (ipFailure.blocked) {
+      return Response.json({ error: 'too_many_attempts' }, { status: 429, headers: { 'retry-after': String(ipFailure.retryAfterSeconds) } });
+    }
     return Response.json({ error: blockedUntil ? 'too_many_attempts' : 'invalid_credentials' }, { status: blockedUntil ? 429 : 401 });
   }
 
