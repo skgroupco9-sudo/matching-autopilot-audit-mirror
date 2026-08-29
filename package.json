@@ -11,7 +11,7 @@
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern outputs --ignore-pattern work",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm typecheck && pnpm lint && pnpm test:security && pnpm test:qa-fuzz && pnpm test:learning && pnpm test:comparison && pnpm test:identity-documents && pnpm test:identity-profile && pnpm test:service-credentials && pnpm test:registration-requirements && pnpm test:ai-credentials && pnpm test:automation-story && pnpm test:automation-operations && pnpm --dir worker check",
+    "check": "pnpm typecheck && pnpm lint && pnpm test:security && pnpm test:auth-rate-limit && pnpm test:qa-fuzz && pnpm test:learning && pnpm test:comparison && pnpm test:identity-documents && pnpm test:identity-profile && pnpm test:service-credentials && pnpm test:registration-requirements && pnpm test:ai-credentials && pnpm test:automation-story && pnpm test:automation-operations && pnpm --dir worker check",
     "test:security": "node --experimental-strip-types --test test/security-foundations.test.mjs",
     "test:qa-fuzz": "node --experimental-strip-types --test test/qa-fuzz.test.mjs",
     "test:e2e": "playwright test",
@@ -26,7 +26,8 @@
     "test:ai-credentials": "node --experimental-strip-types --test test/ai-credentials.test.mjs",
     "test:automation-story": "node --experimental-strip-types --test test/automation-story.test.mjs",
     "test:automation-operations": "node --experimental-strip-types --test test/automation-operations.test.mjs",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "test:auth-rate-limit": "node --experimental-strip-types --test test/auth-rate-limit.test.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
