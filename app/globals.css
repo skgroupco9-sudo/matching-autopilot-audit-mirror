@@ -2172,10 +2172,14 @@ button:disabled {
   color: #fff;
 }
 
+/* 無効時も文字は読めること。#fff on #cbd3dd は 1.51:1 で WCAG AA(4.5:1) を満たさず、
+   ログインボタンはメール未入力・パスワード8文字未満の初期状態で常に無効なため、
+   初回訪問者が最初に見る主要ボタンのラベルが判読できなかった。
+   #525c6e on #e6eaf0 = 5.58:1。 */
 .primary-button:disabled {
   border-color: #cbd3dd;
-  background: #cbd3dd;
-  color: #fff;
+  background: #e6eaf0;
+  color: #525c6e;
 }
 
 .secondary-button {
