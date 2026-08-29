@@ -49,7 +49,10 @@ export async function POST(request: Request) {
   const adminEmail = configuredAdminEmail();
   if (adminEmail && email !== adminEmail) return Response.json({ error: 'admin_email_required' }, { status: 403 });
   const setupToken = typeof body.setupToken === 'string' ? body.setupToken : '';
-  const setupAuthorized = Boolean(adminEmail) || verifySetupToken(setupToken) || await hasSetupAccess();
+  // MATCHPILOT_ADMIN_EMAIL は「誰が管理者になれるか」の制約であり、初回登録の認可材料ではない。
+  // isSetupConfigured() で MATCHPILOT_SETUP_SECRET の存在は保証済みのため、常にトークンまたは
+  // セットアップCookieの所持を要求する。
+  const setupAuthorized = verifySetupToken(setupToken) || await hasSetupAccess();
   if (!setupAuthorized) return Response.json({ error: 'invalid_setup_token' }, { status: 401 });
 
   const now = Date.now();
