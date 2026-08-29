@@ -1,0 +1,62 @@
+{
+  "name": "sites-project",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "vinext dev",
+    "build": "vinext build",
+    "start": "vinext start",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern outputs --ignore-pattern work",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm typecheck && pnpm lint && pnpm test:security && pnpm test:qa-fuzz && pnpm test:learning && pnpm test:comparison && pnpm test:identity-documents && pnpm test:identity-profile && pnpm test:service-credentials && pnpm test:registration-requirements && pnpm test:ai-credentials && pnpm test:automation-story && pnpm test:automation-operations && pnpm --dir worker check",
+    "test:security": "node --experimental-strip-types --test test/security-foundations.test.mjs",
+    "test:qa-fuzz": "node --experimental-strip-types --test test/qa-fuzz.test.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:lighthouse": "node scripts/run-lighthouse.mjs",
+    "test:learning": "node --experimental-strip-types --test test/telegram-learning.test.mjs",
+    "test:comparison": "node --experimental-strip-types --test test/service-comparison.test.mjs",
+    "test:identity-documents": "node --experimental-strip-types --test test/identity-documents.test.mjs",
+    "test:identity-profile": "node --experimental-strip-types --test test/identity-profile-fields.test.mjs test/identity-profile-photos.test.mjs",
+    "test:service-credentials": "node --experimental-strip-types --test test/service-credentials.test.mjs",
+    "test:registration-requirements": "node --experimental-strip-types --test test/service-registration-requirements.test.mjs",
+    "test:ai-credentials": "node --experimental-strip-types --test test/ai-credentials.test.mjs",
+    "test:automation-story": "node --experimental-strip-types --test test/automation-story.test.mjs",
+    "test:automation-operations": "node --experimental-strip-types --test test/automation-operations.test.mjs",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/workers-types": "4.20260515.1",
+    "@openai/sites-vite-plugin": "^0.1.0 || ^0.2.0",
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.34",
+    "chrome-launcher": "^1.2.1",
+    "drizzle-kit": "0.31.10",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.3.2",
+    "lighthouse": "^13.4.1",
+    "react-server-dom-webpack": "19.2.8",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "vinext": "1.0.0-beta.8",
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
+  },
+  "type": "module"
+}

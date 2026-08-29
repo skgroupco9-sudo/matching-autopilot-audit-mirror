@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `idx_users_telegram_chat` ON `users` (`telegram_chat_id`);

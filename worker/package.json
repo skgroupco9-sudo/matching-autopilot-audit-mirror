@@ -1,0 +1,14 @@
+{
+  "name": "matchpilot-browser-worker",
+  "version": "0.11.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./start-worker.ps1",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check src/index.mjs && node --check src/browser.mjs && node --check src/control-plane.mjs && node --check src/adapters.mjs && node --check src/ai.mjs && node --check src/journal.mjs && node --check src/readiness.mjs && node --test test/*.test.mjs"
+  }
+}

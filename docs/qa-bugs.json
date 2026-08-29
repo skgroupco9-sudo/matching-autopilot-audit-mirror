@@ -1,0 +1,142 @@
+[
+  {
+    "bug_id": "BUG-001",
+    "severity": "High",
+    "persona": "A",
+    "file_path": "lib/request-security.ts",
+    "line_number": 19,
+    "reproduction_steps": [
+      "Origin と Sec-Fetch-Site を付けずに認証系または Gmail 系の mutation API へ直接 POST する",
+      "修正前の同一生成元判定が Origin 欠落を許可することを確認する"
+    ],
+    "expected_behavior": "ブラウザ同一生成元を証明できない mutation は 403 で拒否される",
+    "actual_behavior": "Origin がない直接リクエストを同一生成元として通過させる経路があった",
+    "root_cause": "Origin が存在する場合だけ比較し、Origin と Sec-Fetch-Site の両方が欠落した場合を拒否していなかった"
+  },
+  {
+    "bug_id": "BUG-002",
+    "severity": "High",
+    "persona": "B",
+    "file_path": "lib/use-guarded-fetch.ts",
+    "line_number": 11,
+    "reproduction_steps": [
+      "ログインボタンを通信完了前に 20 回連打する",
+      "最初の通信を保留し、ボタンの disabled 状態と同一 URL への要求数を観測する"
+    ],
+    "expected_behavior": "同一操作は一つの通信を共有し、完了まで操作不能を維持する",
+    "actual_behavior": "重複呼び出しが即時失敗し、それぞれの finally が処理中状態を解除できた",
+    "root_cause": "重複要求を共有 Promise として合流させず、呼び出し側の状態解除が複数回走る設計だった"
+  },
+  {
+    "bug_id": "BUG-003",
+    "severity": "High",
+    "persona": "D",
+    "file_path": "lib/fetch-with-timeout.ts",
+    "line_number": 16,
+    "reproduction_steps": [
+      "クライアント API 応答を 30 秒以上保留する",
+      "画面遷移またはネットワーク切断後の UI 状態を確認する"
+    ],
+    "expected_behavior": "30 秒で中断し、日本語の回復可能なエラーを表示し、画面離脱時は古い通信を破棄する",
+    "actual_behavior": "複数画面の生 fetch に上限時間がなく、処理中表示が終わらない可能性があった",
+    "root_cause": "共通タイムアウト、AbortSignal 中継、アンマウント時中断が未実装だった"
+  },
+  {
+    "bug_id": "BUG-004",
+    "severity": "High",
+    "persona": "D",
+    "file_path": "app/api/dashboard/route.ts",
+    "line_number": 200,
+    "reproduction_steps": [
+      "Cloudflare binding に Gmail と Telegram の秘密値を設定する",
+      "ダッシュボードの準備状態を取得する"
+    ],
+    "expected_behavior": "Cloudflare env の設定を検出して接続準備済みと判定する",
+    "actual_behavior": "process.env を参照するため本番 binding を未設定として扱う可能性があった",
+    "root_cause": "Cloudflare Workers の env と Node.js process.env を混同していた"
+  },
+  {
+    "bug_id": "BUG-005",
+    "severity": "Medium",
+    "persona": "C",
+    "file_path": "lib/unicode-text.ts",
+    "line_number": 12,
+    "reproduction_steps": [
+      "絵文字、補助平面漢字、結合文字、双方向上書き文字を入力する",
+      "文字数制限、切り詰め、保存後表示を確認する"
+    ],
+    "expected_behavior": "Unicode コードポイント境界を保ち、制御文字と方向上書きを除去する",
+    "actual_behavior": "UTF-16 code unit の length/slice によりサロゲートペアを分断できた",
+    "root_cause": "入力長と切り詰めが Unicode を考慮していなかった"
+  },
+  {
+    "bug_id": "BUG-006",
+    "severity": "Medium",
+    "persona": "C",
+    "file_path": "app/worker-setup/worker-setup-client.tsx",
+    "line_number": 200,
+    "reproduction_steps": [
+      "OpenAI API キー欄へ 10 万文字を貼り付ける",
+      "クライアント側で入力が制限されるか確認する"
+    ],
+    "expected_behavior": "サーバー制約と同じ 256 文字で入力を制限する",
+    "actual_behavior": "編集可能な API キー欄に maxLength がなかった",
+    "root_cause": "サーバーバリデーションはあったが HTML 入力制約の網羅検査がなかった"
+  },
+  {
+    "bug_id": "BUG-007",
+    "severity": "Medium",
+    "persona": "B",
+    "file_path": "app/page.tsx",
+    "line_number": 1014,
+    "reproduction_steps": [
+      "アクセシブル名『パスワード』で入力欄を取得する",
+      "同じ label 内の表示切替ボタンが同じ名前で一致することを確認する"
+    ],
+    "expected_behavior": "ラベルはパスワード入力だけに関連付けられ、表示ボタンは固有名を持つ",
+    "actual_behavior": "入力と表示切替ボタンの二要素が同じラベル問い合わせに一致した",
+    "root_cause": "label 要素が入力欄とボタンの両方を内包していた"
+  },
+  {
+    "bug_id": "BUG-008",
+    "severity": "Medium",
+    "persona": "D",
+    "file_path": "app/globals.css",
+    "line_number": 1013,
+    "reproduction_steps": [
+      "OS をダークモードにして認証 API を失敗させる",
+      "エラー見出しと説明文のコントラストを axe/Lighthouse で測る"
+    ],
+    "expected_behavior": "WCAG AA の 3:1 / 4.5:1 を満たす",
+    "actual_behavior": "見出し 1.07:1、説明文 3.65:1 となった",
+    "root_cause": "カード背景だけダーク化し、認証画面の固定文字色を上書きしていなかった"
+  },
+  {
+    "bug_id": "BUG-009",
+    "severity": "Low",
+    "persona": "A",
+    "file_path": "app/layout.tsx",
+    "line_number": 67,
+    "reproduction_steps": [
+      "ルートレイアウトを静的走査する",
+      "dangerouslySetInnerHTML と同期外部テーマスクリプトを確認する"
+    ],
+    "expected_behavior": "利用者入力と混ざらない静的スクリプトとして実行し、追加の描画ブロックを作らない",
+    "actual_behavior": "固定値ではあるが危険な HTML API を使用し、外部化後は同期リクエストが増えた",
+    "root_cause": "初期テーマを初回描画前に適用する実装と安全な静的埋め込みが分離されていなかった"
+  },
+  {
+    "bug_id": "BUG-010",
+    "severity": "Low",
+    "persona": "D",
+    "file_path": "scripts/run-lighthouse.mjs",
+    "line_number": 5,
+    "reproduction_steps": [
+      "Node.js 24 で node scripts/run-lighthouse.mjs を実行する",
+      "Chrome 終了時に Windows が一時プロファイルを短時間ロックするケースも実行する"
+    ],
+    "expected_behavior": "Lighthouse JSON を保存し、測定成功時は終了コード 0 を返す",
+    "actual_behavior": "存在しない default export で起動できず、修正後も一時フォルダ EPERM が測定結果を失敗扱いにした",
+    "root_cause": "chrome-launcher の ESM export 仕様と Windows の一時ファイルロックを考慮していなかった"
+  }
+]
