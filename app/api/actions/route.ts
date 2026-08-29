@@ -417,7 +417,7 @@ export async function POST(request: Request) {
     case 'telegram.unlink': {
       const security = await db.select({ mfaEnabled: users.telegramMfaEnabled }).from(users).where(eq(users.id, authenticatedUser.userId)).limit(1);
       if (security[0]?.mfaEnabled) return Response.json({ error: 'disable_mfa_first' }, { status: 409 });
-      await db.update(users).set({ telegramChatId: null, updatedAt: now }).where(eq(users.id, authenticatedUser.userId));
+      await db.update(users).set({ telegramChatId: null, telegramMfaEnabled: false, updatedAt: now }).where(eq(users.id, authenticatedUser.userId));
       return Response.json({ ok: true });
     }
 

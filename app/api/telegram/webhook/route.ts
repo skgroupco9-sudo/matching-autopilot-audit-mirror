@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
     const linkedAt = new Date();
     await db.batch([
-      db.update(users).set({ telegramChatId: null, updatedAt: linkedAt }).where(eq(users.telegramChatId, String(chatId))),
+      db.update(users).set({ telegramChatId: null, telegramMfaEnabled: false, updatedAt: linkedAt }).where(eq(users.telegramChatId, String(chatId))),
       db.update(users).set({ telegramChatId: String(chatId), updatedAt: linkedAt }).where(eq(users.id, tokenRows[0].userId)),
     ]);
     await db.delete(telegramLinkTokens).where(eq(telegramLinkTokens.tokenHash, tokenHash));
