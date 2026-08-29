@@ -1,10 +1,10 @@
-import { getDb } from '@/db';
+import { getD1, getDb } from '@/db';
 import { authRateLimits } from '@/db/schema';
 import { env } from 'cloudflare:workers';
 import { eq } from 'drizzle-orm';
-import { nextAuthRateLimitState, type AuthRateLimitPolicy } from '@/lib/auth-rate-limit-policy';
+import { AUTH_RATE_LIMIT_SQL, decideFromAuthRateLimitRow, type AuthRateLimitPolicy } from '@/lib/auth-rate-limit-policy';
 
-export { RECOVERY_ACCOUNT_POLICY, RECOVERY_IP_POLICY } from '@/lib/auth-rate-limit-policy';
+export { AUTH_RATE_LIMIT_SQL, RECOVERY_ACCOUNT_POLICY, RECOVERY_IP_POLICY } from '@/lib/auth-rate-limit-policy';
 
 export function clientIpOf(request: Request) {
   return (
@@ -23,18 +23,13 @@ export async function authRateLimitKey(scope: string, subject: string) {
 }
 
 // 遮断中なら true を返し、そうでなければ試行を1件加算して記録する。
+// 加算は上記SQLの1文で完結し、戻り値は RETURNING の実値から判定する。
 export async function consumeAuthRateLimit(keyHash: string, policy: AuthRateLimitPolicy, now: Date) {
-  const db = getDb();
-  const rows = await db.select().from(authRateLimits).where(eq(authRateLimits.keyHash, keyHash)).limit(1);
-  const decision = nextAuthRateLimitState(rows[0], now, policy);
-  if (decision.next) {
-    await db
-      .insert(authRateLimits)
-      .values({ keyHash, failures: decision.next.failures, windowStartedAt: decision.next.windowStartedAt, blockedUntil: decision.next.blockedUntil, updatedAt: now })
-      .onConflictDoUpdate({
-        target: authRateLimits.keyHash,
-        set: { failures: decision.next.failures, windowStartedAt: decision.next.windowStartedAt, blockedUntil: decision.next.blockedUntil, updatedAt: now },
-      });
-  }
-  return decision;
+  const nowMs = now.getTime();
+  const row = await getD1()
+    .prepare(AUTH_RATE_LIMIT_SQL)
+    .bind(keyHash, nowMs, policy.windowMs, policy.maxRequests, policy.blockMs)
+    .first<{ failures: number; window_started_at: number; blocked_until: number | null }>();
+  if (!row) throw new Error('auth_rate_limit_write_failed');
+  return decideFromAuthRateLimitRow(row, nowMs);
 }
