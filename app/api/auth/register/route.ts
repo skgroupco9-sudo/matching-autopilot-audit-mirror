@@ -16,6 +16,7 @@ import {
 } from '@/app/personal-auth';
 import { and, eq, gt } from 'drizzle-orm';
 import { validateJsonMutation } from '@/lib/request-security';
+import { decideInitialSetupAuthorization } from '@/lib/setup-authorization';
 
 type RegistrationBody = {
   email?: string;
@@ -47,13 +48,18 @@ export async function POST(request: Request) {
   if (existing[0]) return Response.json({ error: 'invite_required' }, { status: 403 });
 
   const adminEmail = configuredAdminEmail();
-  if (adminEmail && email !== adminEmail) return Response.json({ error: 'admin_email_required' }, { status: 403 });
   const setupToken = typeof body.setupToken === 'string' ? body.setupToken : '';
-  // MATCHPILOT_ADMIN_EMAIL は「誰が管理者になれるか」の制約であり、初回登録の認可材料ではない。
-  // isSetupConfigured() で MATCHPILOT_SETUP_SECRET の存在は保証済みのため、常にトークンまたは
-  // セットアップCookieの所持を要求する。
-  const setupAuthorized = verifySetupToken(setupToken) || await hasSetupAccess();
-  if (!setupAuthorized) return Response.json({ error: 'invalid_setup_token' }, { status: 401 });
+  // 判定は lib/setup-authorization.ts の純関数に委譲する。
+  // isSetupConfigured() で MATCHPILOT_SETUP_SECRET の存在は保証済みのため、
+  // トークンまたはセットアップCookieの所持を常に要求できる。
+  const decision = decideInitialSetupAuthorization({
+    configuredAdminEmail: adminEmail,
+    email,
+    setupTokenValid: verifySetupToken(setupToken),
+    setupCookieValid: await hasSetupAccess(),
+  });
+  if (decision === 'admin_email_required') return Response.json({ error: 'admin_email_required' }, { status: 403 });
+  if (decision === 'invalid_setup_token') return Response.json({ error: 'invalid_setup_token' }, { status: 401 });
 
   const now = Date.now();
   const salt = createPasswordSalt();

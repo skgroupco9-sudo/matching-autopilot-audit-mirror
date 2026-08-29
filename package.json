@@ -27,7 +27,7 @@
     "test:automation-story": "node --experimental-strip-types --test test/automation-story.test.mjs",
     "test:automation-operations": "node --experimental-strip-types --test test/automation-operations.test.mjs",
     "db:generate": "drizzle-kit generate",
-    "test:setup-auth": "node --test test/setup-authorization.test.mjs"
+    "test:setup-auth": "node --experimental-strip-types --test test/setup-authorization.test.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
